@@ -77,16 +77,22 @@ app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Serve static frontend build if dist directory exists
-const frontendDist = path.resolve(process.cwd(), '../frontend/dist');
-const localDist = path.resolve(process.cwd(), 'dist');
-const staticPath = fs.existsSync(frontendDist) ? frontendDist : (fs.existsSync(localDist) ? localDist : null);
+const possiblePaths = [
+  path.resolve(process.cwd(), 'frontend/dist'),
+  path.resolve(process.cwd(), '../frontend/dist'),
+  path.resolve(process.cwd(), 'dist')
+];
+const staticPath = possiblePaths.find((p) => p && fs.existsSync(p));
 
 if (staticPath) {
+  console.log(`[Server] Serving static frontend build from: ${staticPath}`);
   app.use(express.static(staticPath));
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) return next();
     res.sendFile(path.join(staticPath, 'index.html'));
   });
+} else {
+  console.warn('[Server] No static frontend build found. Running in API-only mode.');
 }
 
 // Catch 404 & Centralized Error Handler
